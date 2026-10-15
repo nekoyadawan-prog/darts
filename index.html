@@ -82,6 +82,28 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
 .chk input{width:18px;height:18px;accent-color:var(--accent)}
 .detail{margin:0;color:var(--muted);font-variant-numeric:tabular-nums}
 .btns{display:flex;flex-direction:column;gap:8px}
+/* practice mode: coach panel */
+.coach{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:8px 10px;display:flex;flex-direction:column;gap:5px}
+.ctop{display:flex;justify-content:space-between;align-items:baseline;gap:8px;font-weight:600;font-size:12px;color:var(--muted)}
+.ctgt b{font:900 20px/1 var(--display);color:#55c6dc;letter-spacing:.04em;margin-left:4px}
+.cstat{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+.cmsg{min-height:68px;font-size:13px;line-height:1.35}
+.ln b{font-weight:700;margin-right:6px}
+.ln.ok{color:var(--good)}
+.ln.fix{color:var(--accent)}
+.ln.info{color:var(--muted)}
+.cbar{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--muted)}
+.cbar .bl{width:28px;font-weight:700}
+.cbar .be{width:12px;text-align:center}
+.btrack{position:relative;flex:1;height:14px;border-radius:7px;background:#0f1418;border:1px solid var(--line)}
+.btrack .tick{position:absolute;left:50%;top:2px;bottom:2px;width:1px;background:var(--line)}
+.mk{position:absolute;top:-2px;bottom:-2px;width:5px;margin-left:-2.5px;border-radius:2px}
+.mk.t{background:#55c6dc}
+.mk.p{background:var(--accent)}
+.legend{display:flex;gap:10px;align-items:center;font-size:11px;color:var(--muted)}
+.lg{display:inline-block;width:5px;height:12px;border-radius:2px;margin-right:4px;vertical-align:-2px}
+.lg.t{background:#55c6dc}
+.lg.p{background:var(--accent)}
 </style>
 
 <div id="app">
@@ -94,6 +116,7 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
   </header>
   <section class="scores" id="scores" aria-live="polite"></section>
   <section class="ticket" id="ticket" aria-live="polite" hidden></section>
+  <section class="coach" id="coach" aria-live="polite" hidden></section>
   <main id="stage"><canvas id="cv" aria-label="Dartboard. Flick upward from the dart to throw."></canvas><div class="shout" id="shout" hidden></div></main>
   <footer class="bottom">
     <div class="row">
@@ -112,6 +135,7 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
       <div class="segs">
         <button class="seg on" type="button" data-g="mode" data-v="x01">501</button>
         <button class="seg" type="button" data-g="mode" data-v="countup">Count-up</button>
+        <button class="seg" type="button" data-g="mode" data-v="practice">練習</button>
         <button class="seg" type="button" data-g="mode" data-v="jiro">二郎</button>
       </div>
       <p class="note" id="modeNote"></p>
@@ -132,6 +156,7 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
       </div>
     </div>
     <label class="chk" id="doutRow"><input type="checkbox" id="dout" checked> Double out</label>
+    <label class="chk" id="guideRow" hidden><input type="checkbox" id="guide" checked> 方向ガイド(点線)を表示</label>
     <div class="btns">
       <button class="primary" id="btnStart" type="button">Throw</button>
       <button class="ghost" id="btnBack" type="button">Back to game</button>
@@ -183,7 +208,7 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
   var $=function(id){return document.getElementById(id);};
   var cv=$('cv'),ctx=cv.getContext('2d'),stage=$('stage');
   var W=1,H=1,cx=0,cy=0,R=100,u=1,dpr=1;
-  var cfg={mode:'x01',players:1,diff:'normal',dout:true};
+  var cfg={mode:'x01',players:1,diff:'normal',dout:true,guide:true};
   var G=null,stuck=[],fly=null,drag=null,pops=[];
   var muted=false,actx=null;
 
@@ -257,12 +282,12 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
   }
   /* glowing target for the next dart of a finish */
   function drawHint(now){
-    if(!G||G.phase==='over'||!G.hint||cfg.mode!=='x01')return;
-    var l=G.hint,pulse=0.5+0.5*Math.sin(now/230);
+    if(!G||G.phase==='over'||!G.hint||(cfg.mode!=='x01'&&cfg.mode!=='practice'))return;
+    var l=G.hint,pulse=0.5+0.5*Math.sin(now/230),pr=cfg.mode==='practice';
     ctx.save();
-    ctx.fillStyle='rgba(242,184,75,'+(0.35+0.4*pulse)+')';
-    ctx.strokeStyle='rgba(255,226,150,'+(0.7+0.3*pulse)+')';
-    ctx.lineWidth=2.5;ctx.shadowColor='#f2b84b';ctx.shadowBlur=10+14*pulse;
+    ctx.fillStyle=pr?'rgba(85,198,220,'+(0.28+0.32*pulse)+')':'rgba(242,184,75,'+(0.35+0.4*pulse)+')';
+    ctx.strokeStyle=pr?'rgba(170,236,248,'+(0.7+0.3*pulse)+')':'rgba(255,226,150,'+(0.7+0.3*pulse)+')';
+    ctx.lineWidth=2.5;ctx.shadowColor=pr?'#55c6dc':'#f2b84b';ctx.shadowBlur=10+14*pulse;
     function seg(r0,r1,a0,a1){ringPath(r0,r1,a0,a1);ctx.fill();ctx.stroke();}
     if(l==='DB'){
       ctx.beginPath();ctx.arc(cx,cy,RB*u,0,7);ctx.fill();ctx.stroke();
@@ -296,7 +321,7 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
   function frame(now){
     ctx.clearRect(0,0,W,H);
     drawBoard();
-    drawHint(now);
+    drawHint(now);drawAim();
     var i,d;
     for(i=0;i<stuck.length;i++){
       d=stuck[i];
@@ -320,10 +345,10 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
       drawDartRear(fx,fy,sc,col,fly.spin0+fly.spinRate*t);
       ctx.globalAlpha=1;
       if(t>=1)land();
-    }else if(drag){
+    }else if(drag&&!drag.tapOnly){drawGuide();
       drawDart(drag.x,drag.y,handScale(),col,0);
     }else if(G&&G.phase==='ready'){
-      var h=home();drawDart(h.x,h.y,handScale(),col,0);
+      var h=home();drawGuide();drawDart(h.x,h.y,handScale(),col,0);
     }
     ctx.textAlign='center';ctx.textBaseline='middle';
     for(i=0;i<pops.length;i++){
@@ -397,6 +422,140 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
       g.gain.setValueAtTime(0.35,t);g.gain.exponentialRampToValueAtTime(0.001,t+0.14);
       o.connect(g);g.connect(actx.destination);o.start(t);o.stop(t+0.15);
     }catch(e){}
+  }
+
+  /* ---------- practice mode ---------- */
+  /* the flick that would put the dart exactly on the target (inverse of release()):
+     speed sets height, tilt sets sideways offset */
+  function aimMath(){
+    var T=G.practice.target,ax=cx+T.ux*u,ay=cy+T.uy*u;
+    var ratio=Math.max(0.25,Math.min(4,Math.pow(2,(cy-ay)/(R*0.5))));
+    var ang=Math.max(-0.95,Math.min(0.95,Math.atan((ax-cx)/(H*0.22))));
+    return {ax:ax,ay:ay,ratio:ratio,ang:ang};
+  }
+  function drawAim(){
+    if(!G||!G.practice||!G.practice.target)return;
+    var a=aimMath(),s=Math.max(5,R*0.05);
+    ctx.save();
+    ctx.strokeStyle='rgba(255,255,255,.9)';ctx.lineWidth=1.5;
+    ctx.beginPath();ctx.arc(a.ax,a.ay,s*0.8,0,7);
+    ctx.moveTo(a.ax-s*1.8,a.ay);ctx.lineTo(a.ax+s*1.8,a.ay);
+    ctx.moveTo(a.ax,a.ay-s*1.8);ctx.lineTo(a.ax,a.ay+s*1.8);
+    ctx.stroke();ctx.restore();
+  }
+  /* dashed arrow from the dart: the direction to flick in */
+  function drawGuide(){
+    if(!G||!G.practice||!G.practice.target||!cfg.guide||G.phase!=='ready'||fly)return;
+    var a=aimMath(),sx,sy,L=Math.min(H*0.2,150),h;
+    if(drag&&!drag.tapOnly){sx=drag.x;sy=drag.y;}else{h=home();sx=h.x;sy=h.y;}
+    sy-=6;
+    var ex=sx+Math.sin(a.ang)*L,ey=sy-Math.cos(a.ang)*L,hd=Math.atan2(ey-sy,ex-sx);
+    ctx.save();
+    ctx.strokeStyle='rgba(85,198,220,.85)';ctx.fillStyle='rgba(85,198,220,.85)';ctx.lineWidth=2.5;
+    ctx.setLineDash([7,6]);ctx.beginPath();ctx.moveTo(sx,sy);ctx.lineTo(ex,ey);ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.beginPath();ctx.moveTo(ex,ey);
+    ctx.lineTo(ex-Math.cos(hd-0.45)*12,ey-Math.sin(hd-0.45)*12);
+    ctx.lineTo(ex-Math.cos(hd+0.45)*12,ey-Math.sin(hd+0.45)*12);
+    ctx.closePath();ctx.fill();
+    ctx.restore();
+  }
+  function tName(T){
+    var l=T.label,c=l.charAt(0);
+    if(l==='DB')return 'ダブルブル';
+    if(l==='25')return 'アウターブル(25)';
+    if(c==='T')return 'トリプル'+l.slice(1);
+    if(c==='D')return 'ダブル'+l.slice(1);
+    return 'シングル'+l+(Math.hypot(T.ux,T.uy)<TI?'(内側)':'(外側)');
+  }
+  /* tap on the board: aim at the middle of the tapped area */
+  function setTarget(x,y){
+    var P=G.practice,dx=x-cx,dy=y-cy,r=Math.hypot(dx,dy)/u;
+    if(r>DO)return;
+    var hit=getHit(x,y),lab=hit.label,ux=0,uy=0,rr,c,i;
+    if(lab!=='DB'){
+      if(hit.kind==='bull'){
+        c=Math.atan2(dy,dx);rr=(RB+RO)/2;
+      }else{
+        i=ORDER.indexOf(segNum(hit));c=-Math.PI/2+i*Math.PI/10;
+        if(hit.kind==='multi')rr=lab.charAt(0)==='T'?(TI+TO)/2:(DI+DO)/2;
+        else rr=r<TI?(RO+TI)/2:(TO+DI)/2;
+      }
+      ux=Math.cos(c)*rr;uy=Math.sin(c)*rr;
+    }
+    var T=P.target;
+    if(T&&T.label===lab&&Math.abs(T.ux-ux)<1&&Math.abs(T.uy-uy)<1)return;
+    P.target={label:lab,ux:ux,uy:uy};
+    P.throws=0;P.hits=0;P.streak=0;P.last=null;
+    stuck=[];G.turn.darts=[];pops=[];
+    updateUI();
+  }
+  /* compare the player's flick with the ideal one and say what to change */
+  function practiceHit(hit){
+    var P=G.practice,t=G.turn,T=P.target,m=G.lastM;
+    while(stuck.length>3)stuck.shift();
+    while(t.darts.length>3)t.darts.shift();
+    G.phase='ready';
+    if(!T||!m){updateUI();return;}
+    var A=aimMath(),ok=hit.label===T.label,L=[];
+    P.throws++;
+    if(ok){P.hits++;P.streak++;}else P.streak=0;
+    /* where this flick was aimed, before the random wobble */
+    var ix=cx+Math.tan(m.ang)*H*0.22,iy=cy-Math.log2(m.ratio)*R*0.5;
+    function inT(x,y){return getHit(x,y).label===T.label;}
+    var intOK=inT(ix,iy),vOK=inT(A.ax,iy),hOK=inT(ix,A.ay);
+    var needV=!intOK&&!vOK,needH=!intOK&&!hOK;
+    if(!intOK&&vOK&&hOK){needV=true;needH=true;}
+    var off=[],dxm=Math.round((m.lx-A.ax)/u),dym=Math.round((m.ly-A.ay)/u);
+    if(Math.abs(dxm)>=3)off.push((dxm>0?'右':'左')+Math.abs(dxm)+'mm');
+    if(Math.abs(dym)>=3)off.push((dym>0?'下':'上')+Math.abs(dym)+'mm');
+    L.push({k:ok?'ok':'info',h:(ok?'命中! ':'')+'結果 <b>'+hit.label+'</b>'+(!ok&&off.length?'(的から'+off.join('・')+')':'')});
+    if(intOK){
+      L.push({k:'ok',h:'<b>入力</b> 速さも向きも的の範囲内。この動きをキープ'});
+      if(!ok)L.push({k:'info',h:m.dev>R*0.1?'外れは手ブレ。指をまっすぐ動かすとバラつきが減る':'外れは誤差。同じ動きでもう一度'});
+    }else{
+      if(needV){
+        var ch=A.ratio/m.raw,slow=ch<1,pct=Math.max(1,Math.round(Math.abs(slow?1-ch:ch-1)*100));
+        L.push({k:'fix',h:'<b>速さ</b> '+(pct<12?'ほんの少し':pct<30?'少し':pct<55?'もう少し':'だいぶ')+(slow?'ゆっくり':'速く')+'(約'+(slow?'−':'+')+pct+'%)'});
+      }else L.push({k:'ok',h:'<b>速さ</b> OK'});
+      if(needH){
+        var dd=(A.ang-m.ang)*180/Math.PI,ad=Math.abs(dd);
+        L.push({k:'fix',h:'<b>向き</b> '+(ad<2?'ほんの少し':ad<5?'少し':ad<10?'もう少し':'だいぶ')+(dd>0?'右':'左')+'へ(約'+Math.max(1,Math.round(ad))+'°)'});
+      }else L.push({k:'ok',h:'<b>向き</b> OK'});
+      if(!ok&&m.dev>R*0.16)L.push({k:'info',h:'指の軌道もブレ気味。まっすぐ動かそう'});
+    }
+    P.last={ok:ok,lines:L,m:{raw:m.raw,ang:m.ang}};
+    updateUI();
+  }
+  function practiceOut(){
+    return G.practice.target?'上へフリックで投げる · 的を変えるなら盤面タップ':'盤面をタップして的を選ぶ';
+  }
+  function pcBar(label,l,r,tp,pp){
+    return '<div class="cbar"><span class="bl">'+label+'</span><span class="be">'+l+'</span><div class="btrack"><i class="tick"></i>'
+      +(tp==null?'':'<i class="mk t" style="left:'+tp+'%"></i>')
+      +(pp==null?'':'<i class="mk p" style="left:'+pp+'%"></i>')
+      +'</div><span class="be">'+r+'</span></div>';
+  }
+  function renderCoach(){
+    var el=$('coach'),P=G.practice,i,h='';
+    el.hidden=!P;
+    if(!P)return;
+    var T=P.target,L=P.last,A=T?aimMath():null;
+    var cl=function(v){return Math.max(0,Math.min(100,v));};
+    var sp=function(r){return cl((Math.log(r)/Math.LN2+2)/4*100);};
+    var an=function(a){return cl((a/0.95+1)/2*100);};
+    var rate=P.throws?Math.round(P.hits/P.throws*100):0;
+    h+='<div class="ctop"><span class="ctgt">狙い<b>'+(T?tName(T):'未選択')+'</b></span><span class="cstat">'
+      +(T?'命中 '+P.hits+' / '+P.throws+(P.throws?' ('+rate+'%)':'')+(P.streak>1?' · '+P.streak+'連続':''):'')+'</span></div>';
+    h+='<div class="cmsg">';
+    if(!T)h+='<div class="ln info">盤面をタップして、当てたい場所を選んでください。下のほうの的もOK。選んだら上へフリックして投げます。</div>';
+    else if(L){for(i=0;i<L.lines.length;i++)h+='<div class="ln '+L.lines[i].k+'">'+L.lines[i].h+'</div>';}
+    else h+='<div class="ln info">上へフリックして投げよう。'+(cfg.guide?'点線の向きに指を動かすと近づきます。':'')+'下のバーが目安です。</div>';
+    h+='</div>';
+    h+=pcBar('速さ','遅','速',A?sp(A.ratio):null,L?sp(L.m.raw):null);
+    h+=pcBar('向き','左','右',A?an(A.ang):null,L?an(L.m.ang):null);
+    h+='<div class="legend"><span><i class="lg t"></i>目安</span><span><i class="lg p"></i>前回の投げ</span></div>';
+    el.innerHTML=h;
   }
 
   /* ---------- game flow ---------- */
@@ -516,14 +675,15 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
   }
 
   function newGame(){
-    var n=cfg.mode==='jiro'?1:cfg.players,i;
+    var n=(cfg.mode==='jiro'||cfg.mode==='practice')?1:cfg.players,i;
     G={phase:'ready',cur:0,players:[],turn:null,started:false};
     for(i=0;i<n;i++){
       G.players.push({name:n===1?'You':'P'+(i+1),color:i?'#55c6dc':'#f2b84b',
         score:cfg.mode==='x01'?501:0,total:0,pts:0,darts:0,turns:0});
     }
     G.turn={darts:[],start:G.players[0].score,sum:0,bust:false};
-    G.jiro=null;
+    G.jiro=null;G.practice=null;G.lastM=null;
+    if(cfg.mode==='practice')G.practice={target:null,throws:0,hits:0,streak:0,last:null};
     $('shout').hidden=true;
     if(cfg.mode==='jiro'){
       G.jiro={bowl:1,bowls:BOWLS,order:genOrder(),got:[0,0,0,0],hits:[0,0,0,0],thrown:0,turnsDone:0,perfect:0,last:''};
@@ -547,7 +707,7 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
         +'<div class="pscore">'+big+'</div></div>';
     });
     sc.innerHTML=html;
-    sc.hidden=!!G.jiro;
+    sc.hidden=!!G.jiro||!!G.practice;
     var sl='';
     for(i=0;i<3;i++){
       var d=t.darts[i];
@@ -556,12 +716,15 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
     }
     $('slots').innerHTML=sl;
     var out='';
+    if(G.practice){out=practiceOut();G.hint=G.practice.target?G.practice.target.label:null;}
     if(G.jiro){
       var jd=G.jiro,dl=6-(jd.turnsDone*3+t.darts.length);
       if(G.phase==='serving')out='ぴったり揃った!';
       else if(G.phase==='takeout')out=jd.turnsDone===1?'6本投げ終わり。ラーメンを出そう':'3本投げ終わり。あと3本';
       else if(jd.last&&jd.turnsDone===0&&!t.darts.length)out=jd.last;
       else out='残り'+dl+'本 · 面=1 外リング=2 内リング=3';
+    }else if(G.practice){
+      /* practice: out is set above */
     }else if(!G.started){
       out='Flick up from the dart. A harder flick lands higher.';
     }else if(cfg.mode==='x01'&&G.phase==='ready'&&p.score>=2&&p.score<=170){
@@ -579,11 +742,20 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
     var nxt=G.players[(G.cur+1)%G.players.length];
     nb.textContent=G.players.length>1?'Pull darts · '+nxt.name+' is up':'Pull darts';
     if(G.jiro&&G.jiro.turnsDone===1)nb.textContent='ラーメンを出す';
+    nb.hidden=!!G.practice;
+    renderCoach();
     renderTicket();
   }
   function gauss(){var a=0,b=0;while(!a)a=Math.random();while(!b)b=Math.random();return Math.sqrt(-2*Math.log(a))*Math.cos(2*Math.PI*b);}
   function release(){
     var pts=drag.pts,last=pts[pts.length-1],i=pts.length-1;
+    if(G.practice){
+      /* a short tap picks the target; a flick throws */
+      var p0=pts[0];
+      if(Math.hypot(last.x-p0.x,last.y-p0.y)<14&&last.t-p0.t<500){drag=null;setTarget(last.x,last.y);return;}
+      if(drag.tapOnly){drag=null;return;}
+      if(!G.practice.target){drag=null;shout('先に的をタップで選んでね','');return;}
+    }
     while(i>0&&last.t-pts[i-1].t<=110)i--;
     var a=pts[i],dx=last.x-a.x,dy=last.y-a.y,dt=Math.max(8,last.t-a.t),dist=Math.hypot(dx,dy);
     if(dy>-18||dist<18){drag=null;return;}
@@ -600,7 +772,7 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
     var lx=Math.max(8,Math.min(W-8,cx+ox+gauss()*sigma));
     var ly=Math.max(8,Math.min(H*0.7,cy-oy+gauss()*sigma));
     var pw=Math.max(0.6,Math.min(1.6,ratio));
-    fly={sx:drag.x,sy:drag.y,lx:lx,ly:ly,t0:performance.now(),dur:Math.round(360+180/pw),s0:handScale(),arc:H*(0.09+0.06*pw),spin0:Math.random()*6.28,spinRate:(Math.random()<0.5?-1:1)*Math.PI*(1.5+Math.random())};
+    fly={m:{raw:v/vIdeal,ratio:ratio,ang:ang,dev:dev},sx:drag.x,sy:drag.y,lx:lx,ly:ly,t0:performance.now(),dur:Math.round(360+180/pw),s0:handScale(),arc:H*(0.09+0.06*pw),spin0:Math.random()*6.28,spinRate:(Math.random()<0.5?-1:1)*Math.PI*(1.5+Math.random())};
     drag=null;G.phase='flying';G.started=true;updateUI();
   }
   function land(){
@@ -610,6 +782,7 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
     var pc=hit.kind==='miss'?'#8e9ba4':(hit.kind==='single'?'#ece6d6':'#f2b84b');
     pops.push({text:txt,x:fly.lx,y:fly.ly-R*0.12,t0:performance.now(),color:pc});
     thud(hit.kind!=='miss');
+    G.lastM=fly.m;G.lastM.lx=fly.lx;G.lastM.ly=fly.ly;
     fly=null;
     resolve(hit);
   }
@@ -617,6 +790,7 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
     var p=G.players[G.cur],t=G.turn,won=false,bust=false;
     t.darts.push(hit);p.darts++;
     if(G.jiro){jiroHit(hit);return;}
+    if(G.practice){practiceHit(hit);return;}
     if(cfg.mode==='x01'){
       var ns=p.score-hit.pts;
       if(ns<0||(cfg.dout&&ns===1)||(ns===0&&cfg.dout&&!hit.dbl)){
@@ -683,8 +857,9 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
     if(G.phase==='takeout'){nextTurn();return;}
     if(G.phase!=='ready'||fly)return;
     var r=stage.getBoundingClientRect(),x=e.clientX-r.left,y=e.clientY-r.top;
-    if(y<H*0.45)return;
-    drag={id:e.pointerId,x:x,y:y,pts:[{x:x,y:y,t:performance.now()}]};
+    var tapOnly=y<H*0.45;
+    if(tapOnly&&!G.practice)return;
+    drag={id:e.pointerId,x:x,y:y,tapOnly:tapOnly,pts:[{x:x,y:y,t:performance.now()}]};
     try{stage.setPointerCapture(e.pointerId);}catch(err){}
   });
   stage.addEventListener('pointermove',function(e){
@@ -720,7 +895,10 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
       :(cfg.mode==='jiro'
         ?'店員になってコールどおりに盛り付け。ニンニク・アブラ・カラメは、コールされたものだけ入れます。ヤサイはコールなしなら普通に入れて、抜きなら入れません。盤の面=1つ分、外の細いリング(ダブル)=2つ分、内の細いリング(トリプル)=3つ分。マシ・カラカラ=2つ分、マシマシ=3つ分で、順番は自由です。コールとぴったり揃うと「完成!」でその場で出来上がり。基本100点に、残りのダーツ1本ごとに+10点。マシ以上を1本のダブル・トリプルで決める「一発決め」は+20点です。6本使っても揃わなければ、足りない・入れすぎ1つにつき-20点。1杯6本で5杯。'
         :'Eight rounds of three darts. The highest total wins.');
-    document.querySelector('#menu [data-g="players"]').parentNode.parentNode.hidden=cfg.mode==='jiro';
+    $('guideRow').hidden=cfg.mode!=='practice';
+    $('guide').checked=cfg.guide;
+    if(cfg.mode==='practice')$('modeNote').textContent='盤面をタップして当てたい場所を指定。投げるたびに、速さ(遅い/速い)と向き(左/右)をどれくらい直せば当たるかを教えます。上のほうの的は速く、下のほうの的はゆっくりフリックします。ブレを抑えて狙いを確認したいときはEasyがおすすめです。';
+    document.querySelector('#menu [data-g="players"]').parentNode.parentNode.hidden=(cfg.mode==='jiro'||cfg.mode==='practice');
   }
   document.querySelector('#menu').addEventListener('click',function(e){
     var b=e.target.closest('.seg');if(!b)return;
@@ -729,6 +907,7 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
     syncMenu();
   });
   $('dout').addEventListener('change',function(){cfg.dout=this.checked;});
+  $('guide').addEventListener('change',function(){cfg.guide=this.checked;if(G&&G.practice)updateUI();});
   function openMenu(){syncMenu();$('over').hidden=true;$('menu').hidden=false;}
   $('btnMenu').addEventListener('click',openMenu);
   $('btnSettings').addEventListener('click',openMenu);
